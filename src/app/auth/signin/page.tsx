@@ -35,7 +35,7 @@ export default function SignInPage() {
         toast.success("Signed in successfully")
         router.push("/dashboard")
       }
-    } catch (error) {
+    } catch {
       toast.error("An error occurred")
     } finally {
       setIsLoading(false)
@@ -97,7 +97,7 @@ export default function SignInPage() {
             </form>
             <div className="mt-4 text-center">
               <p className="text-gray-300">
-                Don't have an account?{" "}
+                Don&apos;t have an account?{" "}
                 <Link href="/auth/signup" className="text-white hover:text-blue-300 underline">
                   Sign up
                 </Link>

@@ -7,35 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Search, Plus, MoreVertical, Edit, Trash2, RefreshCw, MessageSquare, FileText } from "lucide-react"
 import { toast } from "sonner"
-
-interface Note {
-  id: string
-  title: string
-  content: string
-  summary: string | null
-  createdAt: string
-  updatedAt: string
-}
-
-interface Chat {
-  id: string
-  title: string
-  noteId?: string
-  createdAt: string
-  updatedAt: string
-  messages: Message[]
-  note?: {
-    id: string
-    title: string
-  }
-}
-
-interface Message {
-  id: string
-  content: string
-  role: string
-  createdAt: string
-}
+import { Note, Chat } from "@/types"
 
 interface NotesSidebarProps {
   onNoteSelect: (note: Note) => void
@@ -93,7 +65,7 @@ export function NotesSidebar({ onNoteSelect, onChatSelect, selectedNoteId, selec
         const data = await response.json()
         setNotes(data)
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to fetch notes")
     } finally {
       setIsLoading(false)
@@ -108,7 +80,7 @@ export function NotesSidebar({ onNoteSelect, onChatSelect, selectedNoteId, selec
         const data = await response.json()
         setChats(data)
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to fetch chats")
     }
   }
@@ -128,7 +100,7 @@ export function NotesSidebar({ onNoteSelect, onChatSelect, selectedNoteId, selec
       } else {
         toast.error("Failed to delete note")
       }
-    } catch (error) {
+    } catch {
       toast.error("An error occurred")
     }
   }
@@ -147,7 +119,7 @@ export function NotesSidebar({ onNoteSelect, onChatSelect, selectedNoteId, selec
       } else {
         toast.error("Failed to regenerate summary")
       }
-    } catch (error) {
+    } catch {
       toast.error("An error occurred")
     }
   }
@@ -167,7 +139,7 @@ export function NotesSidebar({ onNoteSelect, onChatSelect, selectedNoteId, selec
       } else {
         toast.error("Failed to delete chat")
       }
-    } catch (error) {
+    } catch {
       toast.error("An error occurred")
     }
   }
@@ -193,7 +165,7 @@ export function NotesSidebar({ onNoteSelect, onChatSelect, selectedNoteId, selec
       } else {
         toast.error("Failed to create chat")
       }
-    } catch (error) {
+    } catch {
       toast.error("An error occurred")
     }
   }

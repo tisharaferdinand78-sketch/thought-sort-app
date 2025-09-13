@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card } from "@/components/ui/card"
 import { Send, Plus, Bot, User, Sparkles, Edit3, MessageSquare, Save, X, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
+import { Note, Chat } from "@/types"
 
 interface Message {
   id: string
@@ -18,7 +19,6 @@ interface Message {
 }
 
 interface ChatInterfaceProps {
-  onNewNote: () => void
   selectedNote: Note | null
   selectedChat: Chat | null
   onNoteUpdate: (note: Note) => void
@@ -27,36 +27,7 @@ interface ChatInterfaceProps {
   onChatUpdate: (chat: Chat) => void
 }
 
-interface Note {
-  id: string
-  title: string
-  content: string
-  summary: string | null
-  createdAt: string
-  updatedAt: string
-}
-
-interface Chat {
-  id: string
-  title: string
-  noteId?: string
-  createdAt: string
-  updatedAt: string
-  messages: Message[]
-  note?: {
-    id: string
-    title: string
-  }
-}
-
-interface Message {
-  id: string
-  content: string
-  role: string
-  createdAt: string
-}
-
-export function ChatInterface({ onNewNote, selectedNote, selectedChat, onNoteUpdate, onNoteSelect, onChatSelect, onChatUpdate }: ChatInterfaceProps) {
+export function ChatInterface({ selectedNote, selectedChat, onNoteUpdate, onNoteSelect, onChatSelect, onChatUpdate }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -101,7 +72,7 @@ export function ChatInterface({ onNewNote, selectedNote, selectedChat, onNoteUpd
         content: msg.content,
         timestamp: new Date(msg.createdAt),
         noteId: selectedChat.noteId,
-        canAddToNote: msg.role === "assistant" && selectedChat.noteId
+        canAddToNote: msg.role === "assistant" && !!selectedChat.noteId
       }))
       setMessages(chatMessages)
     } else {
@@ -149,7 +120,7 @@ export function ChatInterface({ onNewNote, selectedNote, selectedChat, onNoteUpd
       } else {
         toast.error("Failed to create note")
       }
-    } catch (error) {
+    } catch {
       toast.error("An error occurred")
     } finally {
       setIsLoading(false)
@@ -194,7 +165,7 @@ export function ChatInterface({ onNewNote, selectedNote, selectedChat, onNoteUpd
       } else {
         toast.error("Failed to update note")
       }
-    } catch (error) {
+    } catch {
       toast.error("An error occurred")
     } finally {
       setIsLoading(false)
@@ -223,7 +194,7 @@ export function ChatInterface({ onNewNote, selectedNote, selectedChat, onNoteUpd
       } else {
         toast.error("Failed to regenerate summary")
       }
-    } catch (error) {
+    } catch {
       toast.error("An error occurred")
     } finally {
       setIsLoading(false)
@@ -264,7 +235,7 @@ export function ChatInterface({ onNewNote, selectedNote, selectedChat, onNoteUpd
       } else {
         toast.error("Failed to add response to note")
       }
-    } catch (error) {
+    } catch {
       toast.error("An error occurred")
     } finally {
       setIsLoading(false)
@@ -307,7 +278,7 @@ export function ChatInterface({ onNewNote, selectedNote, selectedChat, onNoteUpd
         console.error("Failed to create note:", errorData)
         toast.error(`Failed to create note: ${errorData.error || "Unknown error"}`)
       }
-    } catch (error) {
+    } catch {
       toast.error("An error occurred")
     } finally {
       setIsLoading(false)

@@ -71,7 +71,7 @@ export default function SignUpPage() {
       } else {
         toast.error(data.error || "An error occurred")
       }
-    } catch (error) {
+    } catch {
       toast.error("An error occurred")
     } finally {
       setIsLoading(false)

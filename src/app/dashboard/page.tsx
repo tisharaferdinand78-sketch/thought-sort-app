@@ -13,35 +13,7 @@ import { Plus, Search, Edit, Trash2, RefreshCw, LogOut, User, MessageSquare, Fil
 import { toast } from "sonner"
 import { ChatInterface } from "@/components/chat-interface"
 import { NotesSidebar } from "@/components/notes-sidebar"
-
-interface Note {
-  id: string
-  title: string
-  content: string
-  summary: string | null
-  createdAt: string
-  updatedAt: string
-}
-
-interface Chat {
-  id: string
-  title: string
-  noteId?: string
-  createdAt: string
-  updatedAt: string
-  messages: Message[]
-  note?: {
-    id: string
-    title: string
-  }
-}
-
-interface Message {
-  id: string
-  content: string
-  role: string
-  createdAt: string
-}
+import { Note, Chat } from "@/types"
 
 export default function DashboardPage() {
   const { data: session, status } = useSession()
@@ -75,7 +47,7 @@ export default function DashboardPage() {
         const data = await response.json()
         setNotes(data)
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to fetch notes")
     }
   }
@@ -102,7 +74,7 @@ export default function DashboardPage() {
       } else {
         toast.error("Failed to create note")
       }
-    } catch (error) {
+    } catch {
       toast.error("An error occurred")
     } finally {
       setIsLoading(false)
@@ -137,7 +109,7 @@ export default function DashboardPage() {
       } else {
         toast.error("Failed to update note")
       }
-    } catch (error) {
+    } catch {
       toast.error("An error occurred")
     } finally {
       setIsLoading(false)
@@ -158,7 +130,7 @@ export default function DashboardPage() {
       } else {
         toast.error("Failed to delete note")
       }
-    } catch (error) {
+    } catch {
       toast.error("An error occurred")
     }
   }
@@ -176,7 +148,7 @@ export default function DashboardPage() {
       } else {
         toast.error("Failed to regenerate summary")
       }
-    } catch (error) {
+    } catch {
       toast.error("An error occurred")
     }
   }
@@ -270,7 +242,6 @@ export default function DashboardPage() {
             />
             <div className="flex-1">
               <ChatInterface 
-                onNewNote={() => {}} 
                 selectedNote={selectedNote}
                 selectedChat={selectedChat}
                 onNoteUpdate={(updatedNote) => {
