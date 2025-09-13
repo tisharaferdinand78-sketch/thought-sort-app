@@ -14,6 +14,7 @@ interface Message {
   content: string
   timestamp: Date
   noteId?: string
+  canAddToNote?: boolean
 }
 
 interface ChatInterfaceProps {
@@ -140,11 +141,53 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
           id: Date.now().toString(),
           type: "assistant",
           content: `Perfect! I've updated "${updatedNote.title}" and regenerated the AI summary. You can continue chatting about this note or make further edits.`,
-          timestamp: new Date()
+          timestamp: new Date(),
+          canAddToNote: false
         }
         setMessages(prev => [...prev, updateMessage])
       } else {
         toast.error("Failed to update note")
+      }
+    } catch (error) {
+      toast.error("An error occurred")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleAddResponseToNote = async (responseContent: string) => {
+    if (!selectedNote) return
+
+    setIsLoading(true)
+    try {
+      const updatedContent = `${selectedNote.content}\n\n--- AI Response ---\n${responseContent}`
+      
+      const response = await fetch(`/api/notes/${selectedNote.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: selectedNote.title,
+          content: updatedContent,
+          regenerateSummary: true
+        }),
+      })
+
+      if (response.ok) {
+        const updatedNote = await response.json()
+        onNoteUpdate(updatedNote)
+        toast.success("AI response added to note!")
+        
+        // Update the note form if we're in edit mode
+        if (editingNote && editingNote.id === selectedNote.id) {
+          setNoteForm({
+            title: updatedNote.title,
+            content: updatedNote.content
+          })
+        }
+      } else {
+        toast.error("Failed to add response to note")
       }
     } catch (error) {
       toast.error("An error occurred")
@@ -180,7 +223,8 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
           id: Date.now().toString(),
           type: "assistant",
           content: `Great! I've created a new note "${newNote.title}" with an AI-generated summary. You can continue typing to create more notes or select this note to chat about it.`,
-          timestamp: new Date()
+          timestamp: new Date(),
+          canAddToNote: false
         }
         setMessages(prev => [...prev, noteMessage])
       } else {
@@ -234,7 +278,8 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
             id: (Date.now() + 1).toString(),
             type: "assistant",
             content: data.response,
-            timestamp: new Date()
+            timestamp: new Date(),
+            canAddToNote: true
           }
           setMessages(prev => [...prev, assistantMessage])
         } else {
@@ -263,7 +308,8 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
               id: (Date.now() + 1).toString(),
               type: "assistant",
               content: data.response,
-              timestamp: new Date()
+              timestamp: new Date(),
+              canAddToNote: false
             }
             setMessages(prev => [...prev, assistantMessage])
           } else {
@@ -395,9 +441,21 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
                   }`}>
                     <div className="p-3">
                       <p className="text-white text-sm leading-relaxed">{message.content}</p>
-                      <p className="text-gray-400 text-xs mt-2">
-                        {message.timestamp.toLocaleTimeString()}
-                      </p>
+                      <div className="flex items-center justify-between mt-2">
+                        <p className="text-gray-400 text-xs">
+                          {message.timestamp.toLocaleTimeString()}
+                        </p>
+                        {message.type === "assistant" && message.canAddToNote && selectedNote && (
+                          <Button
+                            onClick={() => handleAddResponseToNote(message.content)}
+                            size="sm"
+                            className="glass bg-white/10 hover:bg-white/20 text-white border-white/20 text-xs px-2 py-1"
+                          >
+                            <Plus className="w-3 h-3 mr-1" />
+                            Add to Note
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </Card>
                 </div>
