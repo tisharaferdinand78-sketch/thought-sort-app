@@ -19,6 +19,7 @@ interface Note {
   title: string
   content: string
   summary: string | null
+  icon: string | null
   createdAt: string
   updatedAt: string
 }

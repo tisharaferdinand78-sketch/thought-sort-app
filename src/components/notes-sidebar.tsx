@@ -13,6 +13,7 @@ interface Note {
   title: string
   content: string
   summary: string | null
+  icon: string | null
   createdAt: string
   updatedAt: string
 }
@@ -146,9 +147,12 @@ export function NotesSidebar({ onNoteSelect, selectedNoteId, onNoteUpdate }: Not
             >
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
-                  <CardTitle className="text-white text-sm font-medium line-clamp-2">
-                    {note.title}
-                  </CardTitle>
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className="text-lg flex-shrink-0">{note.icon || "📝"}</span>
+                    <CardTitle className="text-white text-sm font-medium line-clamp-2">
+                      {note.title}
+                    </CardTitle>
+                  </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button

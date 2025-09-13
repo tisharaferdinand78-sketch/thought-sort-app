@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { generateSummary } from "@/lib/gemini"
+import { generateSummary, generateIcon } from "@/lib/gemini"
 
 export async function GET(
   request: NextRequest,
@@ -68,10 +68,16 @@ export async function PUT(
     }
 
     let summary = existingNote.summary
+    let icon = existingNote.icon
 
-    // Regenerate summary if requested or if content changed significantly
+    // Regenerate summary and icon if requested or if content changed significantly
     if (regenerateSummary || content !== existingNote.content) {
-      summary = await generateSummary(content)
+      const [newSummary, newIcon] = await Promise.all([
+        generateSummary(content),
+        generateIcon(content)
+      ])
+      summary = newSummary
+      icon = newIcon
     }
 
     const updatedNote = await prisma.note.update({
@@ -80,6 +86,7 @@ export async function PUT(
         title,
         content,
         summary,
+        icon,
         updatedAt: new Date()
       }
     })

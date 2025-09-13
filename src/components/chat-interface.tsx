@@ -28,6 +28,7 @@ interface Note {
   title: string
   content: string
   summary: string | null
+  icon: string | null
   createdAt: string
   updatedAt: string
 }
@@ -334,7 +335,10 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
                   <div className="p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div>
-                        <h3 className="text-white text-xl font-semibold mb-2">{selectedNote.title}</h3>
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="text-2xl">{selectedNote.icon || "📝"}</span>
+                          <h3 className="text-white text-xl font-semibold">{selectedNote.title}</h3>
+                        </div>
                         <p className="text-gray-400 text-sm">
                           Created: {new Date(selectedNote.createdAt).toLocaleDateString()} • 
                           Updated: {new Date(selectedNote.updatedAt).toLocaleDateString()}
