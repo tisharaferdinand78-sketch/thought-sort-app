@@ -183,7 +183,9 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate }: ChatInt
         }
         setMessages(prev => [...prev, noteMessage])
       } else {
-        toast.error("Failed to create note")
+        const errorData = await response.json()
+        console.error("Failed to create note:", errorData)
+        toast.error(`Failed to create note: ${errorData.error || "Unknown error"}`)
       }
     } catch (error) {
       toast.error("An error occurred")

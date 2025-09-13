@@ -29,24 +29,34 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("POST /api/notes - Starting note creation")
+    
     const session = await getServerSession(authOptions)
+    console.log("Session:", session ? "Found" : "Not found")
     
     if (!session?.user?.id) {
+      console.log("No session or user ID found")
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { title, content } = await request.json()
+    const body = await request.json()
+    console.log("Request body:", body)
+    const { title, content } = body
 
     if (!title || !content) {
+      console.log("Missing title or content:", { title: !!title, content: !!content })
       return NextResponse.json(
         { error: "Title and content are required" },
         { status: 400 }
       )
     }
 
+    console.log("Generating AI summary...")
     // Generate AI summary
     const summary = await generateSummary(content)
+    console.log("Summary generated:", summary ? "Success" : "Failed")
 
+    console.log("Creating note in database...")
     const note = await prisma.note.create({
       data: {
         title,
@@ -56,9 +66,14 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    console.log("Note created successfully:", note.id)
     return NextResponse.json(note, { status: 201 })
   } catch (error) {
     console.error("Error creating note:", error)
+    console.error("Error details:", {
+      message: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined
+    })
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
