@@ -20,9 +20,10 @@ interface Note {
 interface NotesSidebarProps {
   onNoteSelect: (note: Note) => void
   selectedNoteId?: string
+  onNoteUpdate?: (note: Note) => void
 }
 
-export function NotesSidebar({ onNoteSelect, selectedNoteId }: NotesSidebarProps) {
+export function NotesSidebar({ onNoteSelect, selectedNoteId, onNoteUpdate }: NotesSidebarProps) {
   const [notes, setNotes] = useState<Note[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isLoading, setIsLoading] = useState(true)
@@ -30,6 +31,13 @@ export function NotesSidebar({ onNoteSelect, selectedNoteId }: NotesSidebarProps
   useEffect(() => {
     fetchNotes()
   }, [])
+
+  useEffect(() => {
+    if (onNoteUpdate) {
+      // This will be called when a note is updated from the chat interface
+      fetchNotes()
+    }
+  }, [onNoteUpdate])
 
   const fetchNotes = async () => {
     try {

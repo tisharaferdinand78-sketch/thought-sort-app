@@ -237,9 +237,20 @@ export default function DashboardPage() {
             <NotesSidebar 
               onNoteSelect={setSelectedNote}
               selectedNoteId={selectedNote?.id}
+              onNoteUpdate={(updatedNote) => {
+                setNotes(notes.map(note => note.id === updatedNote.id ? updatedNote : note))
+                setSelectedNote(updatedNote)
+              }}
             />
             <div className="flex-1">
-              <ChatInterface onNewNote={() => setIsCreateDialogOpen(true)} />
+              <ChatInterface 
+                onNewNote={() => setIsCreateDialogOpen(true)} 
+                selectedNote={selectedNote}
+                onNoteUpdate={(updatedNote) => {
+                  setNotes(notes.map(note => note.id === updatedNote.id ? updatedNote : note))
+                  setSelectedNote(updatedNote)
+                }}
+              />
             </div>
           </>
         ) : (
