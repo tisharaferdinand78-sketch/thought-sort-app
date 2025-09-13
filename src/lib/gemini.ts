@@ -10,7 +10,16 @@ export async function generateSummary(content: string): Promise<string> {
 
 ${content}`
 
-    const result = await model.generateContent(prompt)
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Summary generation timeout")), 15000)
+    })
+
+    const result = await Promise.race([
+      model.generateContent(prompt),
+      timeoutPromise
+    ]) as any
+
     const response = await result.response
     return response.text()
   } catch (error) {
@@ -27,7 +36,16 @@ export async function generateIcon(content: string): Promise<string> {
 
 Text: ${content}`
 
-    const result = await model.generateContent(prompt)
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Icon generation timeout")), 10000)
+    })
+
+    const result = await Promise.race([
+      model.generateContent(prompt),
+      timeoutPromise
+    ]) as any
+
     const response = await result.response
     const icon = response.text().trim()
     

@@ -53,12 +53,22 @@ export async function POST(request: NextRequest) {
 
     console.log("Generating AI summary and icon...")
     // Generate AI summary and icon in parallel
-    const [summary, icon] = await Promise.all([
-      generateSummary(content),
-      generateIcon(content)
-    ])
-    console.log("Summary generated:", summary ? "Success" : "Failed")
-    console.log("Icon generated:", icon)
+    let summary, icon
+    try {
+      const [summaryResult, iconResult] = await Promise.all([
+        generateSummary(content),
+        generateIcon(content)
+      ])
+      summary = summaryResult
+      icon = iconResult
+      console.log("Summary generated:", summary ? "Success" : "Failed")
+      console.log("Icon generated:", icon)
+    } catch (aiError) {
+      console.error("AI generation error:", aiError)
+      // Fallback to defaults if AI fails
+      summary = "AI summary generation failed"
+      icon = "📄"
+    }
 
     console.log("Creating note in database...")
     const note = await prisma.note.create({

@@ -185,9 +185,16 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
         }
         setMessages(prev => [...prev, noteMessage])
       } else {
-        const errorData = await response.json()
-        console.error("Failed to create note:", errorData)
-        toast.error(`Failed to create note: ${errorData.error || "Unknown error"}`)
+        let errorMessage = "Unknown error"
+        try {
+          const errorData = await response.json()
+          console.error("Failed to create note:", errorData)
+          errorMessage = errorData.error || "Unknown error"
+        } catch (parseError) {
+          console.error("Failed to parse error response:", parseError)
+          errorMessage = `Server error (${response.status})`
+        }
+        toast.error(`Failed to create note: ${errorMessage}`)
       }
     } catch (error) {
       toast.error("An error occurred")
