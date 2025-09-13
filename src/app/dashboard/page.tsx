@@ -23,6 +23,26 @@ interface Note {
   updatedAt: string
 }
 
+interface Chat {
+  id: string
+  title: string
+  noteId?: string
+  createdAt: string
+  updatedAt: string
+  messages: Message[]
+  note?: {
+    id: string
+    title: string
+  }
+}
+
+interface Message {
+  id: string
+  content: string
+  role: string
+  createdAt: string
+}
+
 export default function DashboardPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -33,6 +53,7 @@ export default function DashboardPage() {
   const [editingNote, setEditingNote] = useState<Note | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [selectedNote, setSelectedNote] = useState<Note | null>(null)
+  const [selectedChat, setSelectedChat] = useState<Chat | null>(null)
   const [viewMode, setViewMode] = useState<"chat" | "notes">("chat")
   const [formData, setFormData] = useState({
     title: "",
@@ -236,21 +257,31 @@ export default function DashboardPage() {
           <>
             <NotesSidebar 
               onNoteSelect={setSelectedNote}
+              onChatSelect={setSelectedChat}
               selectedNoteId={selectedNote?.id}
+              selectedChatId={selectedChat?.id}
               onNoteUpdate={(updatedNote) => {
                 setNotes(notes.map(note => note.id === updatedNote.id ? updatedNote : note))
                 setSelectedNote(updatedNote)
+              }}
+              onChatUpdate={(updatedChat) => {
+                setSelectedChat(updatedChat)
               }}
             />
             <div className="flex-1">
               <ChatInterface 
                 onNewNote={() => {}} 
                 selectedNote={selectedNote}
+                selectedChat={selectedChat}
                 onNoteUpdate={(updatedNote) => {
                   setNotes(notes.map(note => note.id === updatedNote.id ? updatedNote : note))
                   setSelectedNote(updatedNote)
                 }}
                 onNoteSelect={setSelectedNote}
+                onChatSelect={setSelectedChat}
+                onChatUpdate={(updatedChat) => {
+                  setSelectedChat(updatedChat)
+                }}
               />
             </div>
           </>

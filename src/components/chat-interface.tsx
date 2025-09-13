@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card } from "@/components/ui/card"
-import { Send, Plus, Bot, User, Sparkles, Edit3, MessageSquare, Save, X } from "lucide-react"
+import { Send, Plus, Bot, User, Sparkles, Edit3, MessageSquare, Save, X, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 
 interface Message {
@@ -20,8 +20,11 @@ interface Message {
 interface ChatInterfaceProps {
   onNewNote: () => void
   selectedNote: Note | null
+  selectedChat: Chat | null
   onNoteUpdate: (note: Note) => void
   onNoteSelect: (note: Note | null) => void
+  onChatSelect: (chat: Chat | null) => void
+  onChatUpdate: (chat: Chat) => void
 }
 
 interface Note {
@@ -33,7 +36,27 @@ interface Note {
   updatedAt: string
 }
 
-export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSelect }: ChatInterfaceProps) {
+interface Chat {
+  id: string
+  title: string
+  noteId?: string
+  createdAt: string
+  updatedAt: string
+  messages: Message[]
+  note?: {
+    id: string
+    title: string
+  }
+}
+
+interface Message {
+  id: string
+  content: string
+  role: string
+  createdAt: string
+}
+
+export function ChatInterface({ onNewNote, selectedNote, selectedChat, onNoteUpdate, onNoteSelect, onChatSelect, onChatUpdate }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -68,6 +91,29 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
       setViewMode("chat")
     }
   }, [selectedNote])
+
+  useEffect(() => {
+    if (selectedChat) {
+      // Load messages from the selected chat
+      const chatMessages = selectedChat.messages.map(msg => ({
+        id: msg.id,
+        type: msg.role as "user" | "assistant",
+        content: msg.content,
+        timestamp: new Date(msg.createdAt),
+        noteId: selectedChat.noteId,
+        canAddToNote: msg.role === "assistant" && selectedChat.noteId
+      }))
+      setMessages(chatMessages)
+    } else {
+      // Reset to welcome message when no chat is selected
+      setMessages([{
+        id: "1",
+        type: "assistant",
+        content: "Welcome to Thought Sort! 🚀 I'm your AI assistant here to help you organize your thoughts. You can:\n\n• Type your wild thoughts and press Enter to create notes\n• Ask me questions about note-taking and organization\n• Select a note to chat about it specifically\n• Use keywords like 'create note' to make new notes\n\nWhat would you like to explore today?",
+        timestamp: new Date()
+      }])
+    }
+  }, [selectedChat])
 
   const handleCreateNote = async () => {
     if (!noteForm.title.trim() || !noteForm.content.trim()) {
@@ -147,6 +193,35 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
         setMessages(prev => [...prev, updateMessage])
       } else {
         toast.error("Failed to update note")
+      }
+    } catch (error) {
+      toast.error("An error occurred")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleRegenerateSummary = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    
+    if (!selectedNote) return
+
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/notes/${selectedNote.id}/summary`, {
+        method: "POST",
+      })
+
+      if (response.ok) {
+        const updatedNote = await response.json()
+        onNoteUpdate(updatedNote)
+        setEditingNote(updatedNote)
+        toast.success("Summary regenerated successfully!")
+      } else {
+        toast.error("Failed to regenerate summary")
       }
     } catch (error) {
       toast.error("An error occurred")
@@ -257,6 +332,27 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
     setIsLoading(true)
 
     try {
+      // Create a new chat if none is selected
+      let currentChatId = selectedChat?.id
+      if (!currentChatId) {
+        const chatResponse = await fetch("/api/chats", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            title: currentInput.slice(0, 50) + (currentInput.length > 50 ? "..." : ""),
+            noteId: selectedNote?.id || null
+          }),
+        })
+        
+        if (chatResponse.ok) {
+          const newChat = await chatResponse.json()
+          currentChatId = newChat.id
+          onChatSelect(newChat)
+        }
+      }
+
       if (selectedNote) {
         // Chat about the selected note using AI
         const response = await fetch("/api/chat", {
@@ -268,7 +364,8 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
             message: currentInput,
             noteId: selectedNote.id,
             noteContent: selectedNote.content,
-            noteTitle: selectedNote.title
+            noteTitle: selectedNote.title,
+            chatId: currentChatId
           }),
         })
 
@@ -282,8 +379,21 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
             canAddToNote: true
           }
           setMessages(prev => [...prev, assistantMessage])
+          
+          // Update the chat with new messages
+          if (currentChatId) {
+            const updatedChat = await fetch(`/api/chats/${currentChatId}`)
+            if (updatedChat.ok) {
+              const chatData = await updatedChat.json()
+              onChatUpdate(chatData)
+            }
+          }
         } else {
-          throw new Error("Failed to get AI response")
+          const errorData = await response.json()
+          if (response.status === 401) {
+            throw new Error("Please log in to use the chat feature")
+          }
+          throw new Error(errorData.error || "Failed to get AI response")
         }
       } else {
         // General chat or auto-create note from input
@@ -298,7 +408,8 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              message: currentInput
+              message: currentInput,
+              chatId: currentChatId
             }),
           })
 
@@ -312,14 +423,28 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
               canAddToNote: false
             }
             setMessages(prev => [...prev, assistantMessage])
+            
+            // Update the chat with new messages
+            if (currentChatId) {
+              const updatedChat = await fetch(`/api/chats/${currentChatId}`)
+              if (updatedChat.ok) {
+                const chatData = await updatedChat.json()
+                onChatUpdate(chatData)
+              }
+            }
           } else {
-            throw new Error("Failed to get AI response")
+            const errorData = await response.json()
+            if (response.status === 401) {
+              throw new Error("Please log in to use the chat feature")
+            }
+            throw new Error(errorData.error || "Failed to get AI response")
           }
         }
       }
     } catch (error) {
       console.error("Chat error:", error)
-      toast.error("Failed to process your message")
+      const errorMessage = error instanceof Error ? error.message : "Failed to process your message"
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -362,10 +487,11 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
           </div>
           <div>
             <h2 className="text-white font-semibold">
-              {selectedNote ? `Working with: ${selectedNote.title}` : "Thought Sort"}
+              {selectedChat ? selectedChat.title : selectedNote ? `Working with: ${selectedNote.title}` : "Thought Sort"}
             </h2>
             <p className="text-gray-400 text-sm">
-              {selectedNote ? "Chat about this note or edit it" : "Type your thoughts and press Enter to create notes"}
+              {selectedChat ? `Chat conversation${selectedChat.note ? ` about ${selectedChat.note.title}` : ''}` : 
+               selectedNote ? "Chat about this note or edit it" : "Type your thoughts and press Enter to create notes"}
             </p>
           </div>
         </div>
@@ -379,7 +505,7 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
               className={viewMode === "chat" ? "glass bg-white/20 text-white border-white/30 px-6" : "glass border-white/20 text-white hover:bg-white/10 px-6"}
             >
               <MessageSquare className="w-4 h-4 mr-2" />
-              Chat with Note
+              Chat
             </Button>
             <Button
               onClick={() => setViewMode("edit")}
@@ -388,11 +514,12 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
               className={viewMode === "edit" ? "glass bg-white/20 text-white border-white/30 px-6" : "glass border-white/20 text-white hover:bg-white/10 px-6"}
             >
               <Edit3 className="w-4 h-4 mr-2" />
-              Edit Note
+              Edit
             </Button>
             <Button
               onClick={() => {
                 onNoteSelect(null)
+                onChatSelect(null)
                 setViewMode("chat")
                 setMessages([{
                   id: "1",
@@ -406,7 +533,7 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
               className="glass border-white/20 text-white hover:bg-white/10 px-6"
             >
               <X className="w-4 h-4 mr-2" />
-              New Note
+              {selectedNote ? "Close" : "New Chat"}
             </Button>
           </div>
         )}
@@ -542,6 +669,19 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
                       <Save className="w-4 h-4 mr-2" />
                       {isLoading ? "Saving..." : selectedNote ? "Update Note" : "Create Note"}
                     </Button>
+                    
+                    {selectedNote && (
+                      <Button
+                        onClick={(e) => handleRegenerateSummary(e)}
+                        disabled={isLoading}
+                        variant="outline"
+                        className="glass border-white/20 text-white hover:bg-white/10"
+                        type="button"
+                      >
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Regenerate Summary
+                      </Button>
+                    )}
                     
                     <Button
                       onClick={() => setViewMode("chat")}

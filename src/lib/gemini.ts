@@ -21,6 +21,10 @@ ${content}`
 
 export async function chatAboutNote(noteContent: string, noteTitle: string, userMessage: string): Promise<string> {
   try {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY is not set")
+    }
+
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
     
     const prompt = `You are an AI assistant helping someone discuss and explore their notes. Here's the note they want to talk about:
@@ -45,12 +49,19 @@ Respond in a natural, conversational way as if you're discussing the note with t
     return response.text()
   } catch (error) {
     console.error("Error generating chat response:", error)
-    throw new Error("Failed to generate chat response")
+    if (error instanceof Error) {
+      throw new Error(`Failed to generate chat response: ${error.message}`)
+    }
+    throw new Error("Failed to generate chat response: Unknown error")
   }
 }
 
 export async function chatGeneral(userMessage: string): Promise<string> {
   try {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY is not set")
+    }
+
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
     
     const prompt = `You are an AI assistant for Thought Sort, an app that helps overthinkers organize their thoughts into notes. The user is asking: "${userMessage}"
@@ -68,6 +79,9 @@ Be conversational and helpful.`
     return response.text()
   } catch (error) {
     console.error("Error generating general chat response:", error)
-    throw new Error("Failed to generate chat response")
+    if (error instanceof Error) {
+      throw new Error(`Failed to generate chat response: ${error.message}`)
+    }
+    throw new Error("Failed to generate chat response: Unknown error")
   }
 }
