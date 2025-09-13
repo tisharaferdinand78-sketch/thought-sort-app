@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Search, Plus, MoreVertical, Edit, Trash2, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
+import { DynamicIcon } from "./dynamic-icon"
 
 interface Note {
   id: string
@@ -148,7 +149,11 @@ export function NotesSidebar({ onNoteSelect, selectedNoteId, onNoteUpdate }: Not
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <span className="text-lg flex-shrink-0">{note.icon || "📄"}</span>
+                    <DynamicIcon 
+                      name={note.icon || "FileText"} 
+                      size={18} 
+                      className="text-white flex-shrink-0" 
+                    />
                     <CardTitle className="text-white text-sm font-medium line-clamp-2">
                       {note.title}
                     </CardTitle>
