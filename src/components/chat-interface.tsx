@@ -36,7 +36,7 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate }: ChatInt
     {
       id: "1",
       type: "assistant",
-      content: "Hello! I'm your AI assistant for Thought Sort. I can help you create, organize, and discuss your notes. What would you like to work on today?",
+      content: "Welcome to Thought Sort! 🚀 Start typing your thoughts in the box below and press Enter to create your first note. I'll automatically generate summaries and help you organize your ideas.",
       timestamp: new Date()
     }
   ])
@@ -45,6 +45,7 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate }: ChatInt
   const [viewMode, setViewMode] = useState<"chat" | "edit">("chat")
   const [editingNote, setEditingNote] = useState<Note | null>(null)
   const [noteForm, setNoteForm] = useState({ title: "", content: "" })
+  const [isExpanded, setIsExpanded] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
@@ -151,38 +152,54 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate }: ChatInt
     }
   }
 
+  const handleCreateNoteFromInput = async (content: string) => {
+    if (!content.trim() || isLoading) return
+
+    setIsLoading(true)
+    try {
+      // Create a note with the input content
+      const response = await fetch("/api/notes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: content.slice(0, 50) + (content.length > 50 ? "..." : ""), // Auto-generate title from content
+          content: content.trim()
+        }),
+      })
+
+      if (response.ok) {
+        const newNote = await response.json()
+        onNoteUpdate(newNote)
+        toast.success("Note created successfully!")
+        
+        // Add a message about the new note
+        const noteMessage: Message = {
+          id: Date.now().toString(),
+          type: "assistant",
+          content: `Great! I've created a new note "${newNote.title}" with an AI-generated summary. You can continue typing to create more notes or select this note to chat about it.`,
+          timestamp: new Date()
+        }
+        setMessages(prev => [...prev, noteMessage])
+      } else {
+        toast.error("Failed to create note")
+      }
+    } catch (error) {
+      toast.error("An error occurred")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!inputValue.trim() || isLoading) return
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      type: "user",
-      content: inputValue.trim(),
-      timestamp: new Date()
-    }
-
-    setMessages(prev => [...prev, userMessage])
+    // Auto-create note from input
+    await handleCreateNoteFromInput(inputValue.trim())
     setInputValue("")
-    setIsLoading(true)
-
-    try {
-      // Simulate AI response (you can replace this with actual AI integration)
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: "assistant",
-        content: `I understand you want to "${inputValue.trim()}". Let me help you with that. You can create a new note to capture your thoughts, or I can help you organize existing notes. What specific aspect would you like to focus on?`,
-        timestamp: new Date()
-      }
-
-      setMessages(prev => [...prev, assistantMessage])
-    } catch (error) {
-      toast.error("Failed to get AI response")
-    } finally {
-      setIsLoading(false)
-    }
+    setIsExpanded(false)
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -192,9 +209,29 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate }: ChatInt
     }
   }
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value)
+    // Auto-expand when typing
+    if (e.target.value.length > 0 && !isExpanded) {
+      setIsExpanded(true)
+    }
+  }
+
+  const handleInputFocus = () => {
+    if (inputValue.length > 0) {
+      setIsExpanded(true)
+    }
+  }
+
+  const handleInputBlur = () => {
+    if (!inputValue.trim()) {
+      setIsExpanded(false)
+    }
+  }
+
   return (
     <div className="flex flex-col h-full">
-      {/* Chat Header */}
+      {/* Simplified Header */}
       <div className="flex items-center justify-between p-4 border-b border-white/10">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
@@ -202,48 +239,36 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate }: ChatInt
           </div>
           <div>
             <h2 className="text-white font-semibold">
-              {selectedNote ? `Working with: ${selectedNote.title}` : "AI Assistant"}
+              {selectedNote ? `Working with: ${selectedNote.title}` : "Thought Sort"}
             </h2>
             <p className="text-gray-400 text-sm">
-              {selectedNote ? "Chat about this note or edit it" : "Ready to help with your notes"}
+              {selectedNote ? "Chat about this note or edit it" : "Type your thoughts and press Enter to create notes"}
             </p>
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
-          {selectedNote && (
-            <div className="flex gap-2">
-              <Button
-                onClick={() => setViewMode("chat")}
-                variant={viewMode === "chat" ? "default" : "outline"}
-                size="sm"
-                className={viewMode === "chat" ? "glass bg-white/20 text-white border-white/30" : "glass border-white/20 text-white hover:bg-white/10"}
-              >
-                <MessageSquare className="w-4 h-4 mr-1" />
-                Chat
-              </Button>
-              <Button
-                onClick={() => setViewMode("edit")}
-                variant={viewMode === "edit" ? "default" : "outline"}
-                size="sm"
-                className={viewMode === "edit" ? "glass bg-white/20 text-white border-white/30" : "glass border-white/20 text-white hover:bg-white/10"}
-              >
-                <Edit3 className="w-4 h-4 mr-1" />
-                Edit
-              </Button>
-            </div>
-          )}
-          
-          {!selectedNote && (
+        {selectedNote && (
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setViewMode("chat")}
+              variant={viewMode === "chat" ? "default" : "outline"}
+              size="sm"
+              className={viewMode === "chat" ? "glass bg-white/20 text-white border-white/30" : "glass border-white/20 text-white hover:bg-white/10"}
+            >
+              <MessageSquare className="w-4 h-4 mr-1" />
+              Chat
+            </Button>
             <Button
               onClick={() => setViewMode("edit")}
-              className="glass bg-white/10 hover:bg-white/20 text-white border-white/20"
+              variant={viewMode === "edit" ? "default" : "outline"}
+              size="sm"
+              className={viewMode === "edit" ? "glass bg-white/20 text-white border-white/30" : "glass border-white/20 text-white hover:bg-white/10"}
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Create Note
+              <Edit3 className="w-4 h-4 mr-1" />
+              Edit
             </Button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Main Content - Chat or Edit View */}
@@ -297,7 +322,7 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate }: ChatInt
                           <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
                           <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
                         </div>
-                        <span className="text-gray-400 text-sm">AI is thinking...</span>
+                        <span className="text-gray-400 text-sm">Creating note...</span>
                       </div>
                     </div>
                   </Card>
@@ -364,32 +389,40 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate }: ChatInt
         )}
       </div>
 
-      {/* Input Area - Only show in chat mode */}
+      {/* Centered Input Area - Only show in chat mode */}
       {viewMode === "chat" && (
-        <div className="p-4 border-t border-white/10">
-          <form onSubmit={handleSendMessage} className="flex gap-3">
-            <div className="flex-1 relative">
-              <Input
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Ask me anything about your notes or create new ones..."
-                className="glass-input text-white placeholder:text-gray-400 pr-12"
-                disabled={isLoading}
-              />
-              <Button
-                type="submit"
-                size="sm"
-                disabled={!inputValue.trim() || isLoading}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 glass bg-white/10 hover:bg-white/20 text-white border-white/20"
-              >
-                <Send className="w-4 h-4" />
-              </Button>
-            </div>
-          </form>
-          <p className="text-gray-500 text-xs mt-2 text-center">
-            Press Enter to send, Shift+Enter for new line
-          </p>
+        <div className="p-8">
+          <div className="max-w-2xl mx-auto">
+            <form onSubmit={handleSendMessage} className="relative">
+              <div className={`relative transition-all duration-300 ${
+                isExpanded ? 'mb-4' : ''
+              }`}>
+                <Input
+                  value={inputValue}
+                  onChange={handleInputChange}
+                  onFocus={handleInputFocus}
+                  onBlur={handleInputBlur}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Type your thoughts here... Press Enter to create a note"
+                  className={`glass-input text-white placeholder:text-gray-400 pr-12 transition-all duration-300 ${
+                    isExpanded ? 'h-20 text-base' : 'h-12 text-sm'
+                  }`}
+                  disabled={isLoading}
+                />
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={!inputValue.trim() || isLoading}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 glass bg-white/10 hover:bg-white/20 text-white border-white/20"
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
+            </form>
+            <p className="text-gray-500 text-xs text-center mt-2">
+              {isExpanded ? "Press Enter to create note" : "Start typing to expand"}
+            </p>
+          </div>
         </div>
       )}
     </div>

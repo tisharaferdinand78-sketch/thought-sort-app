@@ -244,7 +244,7 @@ export default function DashboardPage() {
             />
             <div className="flex-1">
               <ChatInterface 
-                onNewNote={() => setIsCreateDialogOpen(true)} 
+                onNewNote={() => {}} 
                 selectedNote={selectedNote}
                 onNoteUpdate={(updatedNote) => {
                   setNotes(notes.map(note => note.id === updatedNote.id ? updatedNote : note))
