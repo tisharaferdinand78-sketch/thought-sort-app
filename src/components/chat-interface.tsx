@@ -403,7 +403,7 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate }: ChatInt
                   onFocus={handleInputFocus}
                   onBlur={handleInputBlur}
                   onKeyPress={handleKeyPress}
-                  placeholder="Type your thoughts here... Press Enter to create a note"
+                  placeholder="Type your wild thoughts here... Press Enter to organize the magic"
                   className={`glass-input text-white placeholder:text-gray-400 pr-12 transition-all duration-300 ${
                     isExpanded ? 'h-20 text-base' : 'h-12 text-sm'
                   }`}
