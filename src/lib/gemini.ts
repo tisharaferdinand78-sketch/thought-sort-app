@@ -4,7 +4,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
 
 export async function generateSummary(content: string): Promise<string> {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" })
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
     
     const prompt = `Please provide a concise summary of the following text. Focus on the main points and key insights. Keep it under 200 words:
 
