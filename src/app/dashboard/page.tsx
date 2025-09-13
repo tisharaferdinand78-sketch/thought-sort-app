@@ -250,6 +250,7 @@ export default function DashboardPage() {
                   setNotes(notes.map(note => note.id === updatedNote.id ? updatedNote : note))
                   setSelectedNote(updatedNote)
                 }}
+                onNoteSelect={setSelectedNote}
               />
             </div>
           </>

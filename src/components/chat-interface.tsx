@@ -20,6 +20,7 @@ interface ChatInterfaceProps {
   onNewNote: () => void
   selectedNote: Note | null
   onNoteUpdate: (note: Note) => void
+  onNoteSelect: (note: Note | null) => void
 }
 
 interface Note {
@@ -31,7 +32,7 @@ interface Note {
   updatedAt: string
 }
 
-export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate }: ChatInterfaceProps) {
+export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSelect }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -198,10 +199,41 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate }: ChatInt
     e.preventDefault()
     if (!inputValue.trim() || isLoading) return
 
-    // Auto-create note from input
-    await handleCreateNoteFromInput(inputValue.trim())
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      type: "user",
+      content: inputValue.trim(),
+      timestamp: new Date()
+    }
+
+    setMessages(prev => [...prev, userMessage])
+    const currentInput = inputValue.trim()
     setInputValue("")
     setIsExpanded(false)
+    setIsLoading(true)
+
+    try {
+      if (selectedNote) {
+        // Chat about the selected note
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          type: "assistant",
+          content: `I see you're asking about "${selectedNote.title}". Based on the note content: "${selectedNote.content.slice(0, 100)}${selectedNote.content.length > 100 ? '...' : ''}", I can help you explore this topic further. What specific aspect would you like to discuss?`,
+          timestamp: new Date()
+        }
+
+        setMessages(prev => [...prev, assistantMessage])
+      } else {
+        // Auto-create note from input
+        await handleCreateNoteFromInput(currentInput)
+      }
+    } catch (error) {
+      toast.error("Failed to process your message")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -269,6 +301,24 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate }: ChatInt
               <Edit3 className="w-4 h-4 mr-1" />
               Edit
             </Button>
+            <Button
+              onClick={() => {
+                onNoteSelect(null)
+                setViewMode("chat")
+                setMessages([{
+                  id: "1",
+                  type: "assistant",
+                  content: "Welcome to Thought Sort! 🚀 Start typing your thoughts in the box below and press Enter to create your first note. I'll automatically generate summaries and help you organize your ideas.",
+                  timestamp: new Date()
+                }])
+              }}
+              variant="outline"
+              size="sm"
+              className="glass border-white/20 text-white hover:bg-white/10"
+            >
+              <X className="w-4 h-4 mr-1" />
+              New Note
+            </Button>
           </div>
         )}
       </div>
@@ -277,6 +327,57 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate }: ChatInt
       <div className="flex-1 overflow-y-auto p-4">
         {viewMode === "chat" ? (
           <div className="space-y-4">
+            {/* Selected Note Display */}
+            {selectedNote && (
+              <div className="max-w-4xl mx-auto mb-6">
+                <Card className="glass-card border-white/20 bg-white/10">
+                  <div className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 className="text-white text-xl font-semibold mb-2">{selectedNote.title}</h3>
+                        <p className="text-gray-400 text-sm">
+                          Created: {new Date(selectedNote.createdAt).toLocaleDateString()} • 
+                          Updated: {new Date(selectedNote.updatedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => setViewMode("edit")}
+                          size="sm"
+                          className="glass bg-white/10 hover:bg-white/20 text-white border-white/20"
+                        >
+                          <Edit3 className="w-4 h-4 mr-1" />
+                          Edit
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="text-white text-sm font-medium mb-2">Content:</h4>
+                        <div className="glass p-4 rounded-lg">
+                          <p className="text-gray-200 text-sm leading-relaxed whitespace-pre-wrap">
+                            {selectedNote.content}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {selectedNote.summary && (
+                        <div>
+                          <h4 className="text-white text-sm font-medium mb-2">AI Summary:</h4>
+                          <div className="glass p-4 rounded-lg bg-blue-500/10 border-blue-500/20">
+                            <p className="text-gray-200 text-sm leading-relaxed">
+                              {selectedNote.summary}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            )}
+            
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -405,7 +506,7 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate }: ChatInt
                   onFocus={handleInputFocus}
                   onBlur={handleInputBlur}
                   onKeyPress={handleKeyPress}
-                  placeholder="Type your wild thoughts here... Press Enter to organize the magic"
+                  placeholder={selectedNote ? `Ask me about "${selectedNote.title}" or type new thoughts...` : "Type your wild thoughts here... Press Enter to organize the magic"}
                   className={`glass-input text-white placeholder:text-gray-400 pr-12 transition-all duration-300 ${
                     isExpanded ? 'h-20 text-base' : 'h-12 text-sm'
                   }`}
