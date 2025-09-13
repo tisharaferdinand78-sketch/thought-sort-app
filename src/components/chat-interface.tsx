@@ -37,7 +37,7 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
     {
       id: "1",
       type: "assistant",
-      content: "Welcome to Thought Sort! 🚀 Start typing your thoughts in the box below and press Enter to create your first note. I'll automatically generate summaries and help you organize your ideas.",
+      content: "Welcome to Thought Sort! 🚀 I'm your AI assistant here to help you organize your thoughts. You can:\n\n• Type your wild thoughts and press Enter to create notes\n• Ask me questions about note-taking and organization\n• Select a note to chat about it specifically\n• Use keywords like 'create note' to make new notes\n\nWhat would you like to explore today?",
       timestamp: new Date()
     }
   ])
@@ -214,22 +214,65 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
 
     try {
       if (selectedNote) {
-        // Chat about the selected note
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        
-        const assistantMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          type: "assistant",
-          content: `I see you're asking about "${selectedNote.title}". Based on the note content: "${selectedNote.content.slice(0, 100)}${selectedNote.content.length > 100 ? '...' : ''}", I can help you explore this topic further. What specific aspect would you like to discuss?`,
-          timestamp: new Date()
-        }
+        // Chat about the selected note using AI
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message: currentInput,
+            noteId: selectedNote.id,
+            noteContent: selectedNote.content,
+            noteTitle: selectedNote.title
+          }),
+        })
 
-        setMessages(prev => [...prev, assistantMessage])
+        if (response.ok) {
+          const data = await response.json()
+          const assistantMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            type: "assistant",
+            content: data.response,
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, assistantMessage])
+        } else {
+          throw new Error("Failed to get AI response")
+        }
       } else {
-        // Auto-create note from input
-        await handleCreateNoteFromInput(currentInput)
+        // General chat or auto-create note from input
+        if (currentInput.toLowerCase().includes('create') || currentInput.toLowerCase().includes('note')) {
+          // Auto-create note from input
+          await handleCreateNoteFromInput(currentInput)
+        } else {
+          // General chat
+          const response = await fetch("/api/chat", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              message: currentInput
+            }),
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            const assistantMessage: Message = {
+              id: (Date.now() + 1).toString(),
+              type: "assistant",
+              content: data.response,
+              timestamp: new Date()
+            }
+            setMessages(prev => [...prev, assistantMessage])
+          } else {
+            throw new Error("Failed to get AI response")
+          }
+        }
       }
     } catch (error) {
+      console.error("Chat error:", error)
       toast.error("Failed to process your message")
     } finally {
       setIsLoading(false)
@@ -308,7 +351,7 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
                 setMessages([{
                   id: "1",
                   type: "assistant",
-                  content: "Welcome to Thought Sort! 🚀 Start typing your thoughts in the box below and press Enter to create your first note. I'll automatically generate summaries and help you organize your ideas.",
+                  content: "Welcome to Thought Sort! 🚀 I'm your AI assistant here to help you organize your thoughts. You can:\n\n• Type your wild thoughts and press Enter to create notes\n• Ask me questions about note-taking and organization\n• Select a note to chat about it specifically\n• Use keywords like 'create note' to make new notes\n\nWhat would you like to explore today?",
                   timestamp: new Date()
                 }])
               }}
