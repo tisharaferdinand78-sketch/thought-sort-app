@@ -201,12 +201,7 @@ export function ChatInterface({ onNewNote, selectedNote, selectedChat, onNoteUpd
     }
   }
 
-  const handleRegenerateSummary = async (e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault()
-      e.stopPropagation()
-    }
-    
+  const handleRegenerateSummary = async () => {
     if (!selectedNote) return
 
     setIsLoading(true)
@@ -217,8 +212,13 @@ export function ChatInterface({ onNewNote, selectedNote, selectedChat, onNoteUpd
 
       if (response.ok) {
         const updatedNote = await response.json()
-        onNoteUpdate(updatedNote)
+        // Update the editing note directly without calling onNoteUpdate to avoid view mode switch
         setEditingNote(updatedNote)
+        // Update the note form with the new summary
+        setNoteForm({
+          title: updatedNote.title,
+          content: updatedNote.content
+        })
         toast.success("Summary regenerated successfully!")
       } else {
         toast.error("Failed to regenerate summary")
@@ -672,11 +672,10 @@ export function ChatInterface({ onNewNote, selectedNote, selectedChat, onNoteUpd
                     
                     {selectedNote && (
                       <Button
-                        onClick={(e) => handleRegenerateSummary(e)}
+                        onClick={handleRegenerateSummary}
                         disabled={isLoading}
                         variant="outline"
                         className="glass border-white/20 text-white hover:bg-white/10"
-                        type="button"
                       >
                         <RefreshCw className="w-4 h-4 mr-2" />
                         Regenerate Summary
