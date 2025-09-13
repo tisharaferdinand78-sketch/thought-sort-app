@@ -191,7 +191,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-4">
               <div>
                 <h1 className="text-2xl font-bold text-white">Thought Sort</h1>
-                <p className="text-gray-300 text-sm">AI-powered note organization</p>
+                <p className="text-gray-300 text-sm">Magic for Overthinkers</p>
               </div>
               <div className="flex gap-2">
                 <Button
