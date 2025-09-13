@@ -65,7 +65,6 @@ model Note {
   title       String
   content     String   @db.Text
   summary     String?  @db.Text
-  icon        String?  @default("FileText")
   userId      String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

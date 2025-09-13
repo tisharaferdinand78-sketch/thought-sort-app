@@ -7,7 +7,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card } from "@/components/ui/card"
 import { Send, Plus, Bot, User, Sparkles, Edit3, MessageSquare, Save, X } from "lucide-react"
 import { toast } from "sonner"
-import { DynamicIcon } from "./dynamic-icon"
 
 interface Message {
   id: string
@@ -29,7 +28,6 @@ interface Note {
   title: string
   content: string
   summary: string | null
-  icon: string | null
   createdAt: string
   updatedAt: string
 }
@@ -186,16 +184,9 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
         }
         setMessages(prev => [...prev, noteMessage])
       } else {
-        let errorMessage = "Unknown error"
-        try {
-          const errorData = await response.json()
-          console.error("Failed to create note:", errorData)
-          errorMessage = errorData.error || "Unknown error"
-        } catch (parseError) {
-          console.error("Failed to parse error response:", parseError)
-          errorMessage = `Server error (${response.status})`
-        }
-        toast.error(`Failed to create note: ${errorMessage}`)
+        const errorData = await response.json()
+        console.error("Failed to create note:", errorData)
+        toast.error(`Failed to create note: ${errorData.error || "Unknown error"}`)
       }
     } catch (error) {
       toast.error("An error occurred")
@@ -291,24 +282,24 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
         </div>
         
         {selectedNote && (
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <Button
               onClick={() => setViewMode("chat")}
               variant={viewMode === "chat" ? "default" : "outline"}
-              size="sm"
-              className={viewMode === "chat" ? "glass bg-white/20 text-white border-white/30" : "glass border-white/20 text-white hover:bg-white/10"}
+              size="default"
+              className={viewMode === "chat" ? "glass bg-white/20 text-white border-white/30 px-6" : "glass border-white/20 text-white hover:bg-white/10 px-6"}
             >
-              <MessageSquare className="w-4 h-4 mr-1" />
-              Chat
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Chat with Note
             </Button>
             <Button
               onClick={() => setViewMode("edit")}
               variant={viewMode === "edit" ? "default" : "outline"}
-              size="sm"
-              className={viewMode === "edit" ? "glass bg-white/20 text-white border-white/30" : "glass border-white/20 text-white hover:bg-white/10"}
+              size="default"
+              className={viewMode === "edit" ? "glass bg-white/20 text-white border-white/30 px-6" : "glass border-white/20 text-white hover:bg-white/10 px-6"}
             >
-              <Edit3 className="w-4 h-4 mr-1" />
-              Edit
+              <Edit3 className="w-4 h-4 mr-2" />
+              Edit Note
             </Button>
             <Button
               onClick={() => {
@@ -322,10 +313,10 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
                 }])
               }}
               variant="outline"
-              size="sm"
-              className="glass border-white/20 text-white hover:bg-white/10"
+              size="default"
+              className="glass border-white/20 text-white hover:bg-white/10 px-6"
             >
-              <X className="w-4 h-4 mr-1" />
+              <X className="w-4 h-4 mr-2" />
               New Note
             </Button>
           </div>
@@ -336,64 +327,7 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
       <div className="flex-1 overflow-y-auto p-4">
         {viewMode === "chat" ? (
           <div className="space-y-4">
-            {/* Selected Note Display */}
-            {selectedNote && (
-              <div className="max-w-4xl mx-auto mb-6">
-                <Card className="glass-card border-white/20 bg-white/10">
-                  <div className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <div className="flex items-center gap-3 mb-2">
-                          <DynamicIcon 
-                            name={selectedNote.icon || "FileText"} 
-                            size={24} 
-                            className="text-white" 
-                          />
-                          <h3 className="text-white text-xl font-semibold">{selectedNote.title}</h3>
-                        </div>
-                        <p className="text-gray-400 text-sm">
-                          Created: {new Date(selectedNote.createdAt).toLocaleDateString()} • 
-                          Updated: {new Date(selectedNote.updatedAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => setViewMode("edit")}
-                          size="sm"
-                          className="glass bg-white/10 hover:bg-white/20 text-white border-white/20"
-                        >
-                          <Edit3 className="w-4 h-4 mr-1" />
-                          Edit
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="text-white text-sm font-medium mb-2">Content:</h4>
-                        <div className="glass p-4 rounded-lg">
-                          <p className="text-gray-200 text-sm leading-relaxed whitespace-pre-wrap">
-                            {selectedNote.content}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      {selectedNote.summary && (
-                        <div>
-                          <h4 className="text-white text-sm font-medium mb-2">AI Summary:</h4>
-                          <div className="glass p-4 rounded-lg bg-blue-500/10 border-blue-500/20">
-                            <p className="text-gray-200 text-sm leading-relaxed">
-                              {selectedNote.summary}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              </div>
-            )}
-            
+            {/* Chat Messages */}
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -455,34 +389,50 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
           <div className="max-w-4xl mx-auto space-y-6">
             <Card className="glass-card border-white/20">
               <div className="p-6">
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-white text-sm font-medium mb-2 block">Title</label>
-                    <Input
-                      value={noteForm.title}
-                      onChange={(e) => setNoteForm({ ...noteForm, title: e.target.value })}
-                      className="glass-input text-white placeholder:text-gray-400"
-                      placeholder="Enter note title"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-white text-sm font-medium mb-2 block">Content</label>
-                    <Textarea
-                      value={noteForm.content}
-                      onChange={(e) => setNoteForm({ ...noteForm, content: e.target.value })}
-                      className="glass-input text-white placeholder:text-gray-400 min-h-[300px]"
-                      placeholder="Write your thoughts here..."
-                    />
-                  </div>
-                  
+                <div className="space-y-6">
+                  {/* Note Info Header */}
                   {selectedNote && (
-                    <div className="glass p-4 rounded-lg">
-                      <p className="text-white text-sm font-medium mb-2">Current AI Summary:</p>
-                      <p className="text-gray-300 text-sm">{selectedNote.summary || "No summary available"}</p>
+                    <div className="border-b border-white/10 pb-4">
+                      <h2 className="text-white text-2xl font-semibold mb-2">Editing: {selectedNote.title}</h2>
+                      <p className="text-gray-400 text-sm">
+                        Created: {new Date(selectedNote.createdAt).toLocaleDateString()} • 
+                        Updated: {new Date(selectedNote.updatedAt).toLocaleDateString()}
+                      </p>
                     </div>
                   )}
                   
-                  <div className="flex gap-3">
+                  {/* Edit Form */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-white text-sm font-medium mb-2 block">Title</label>
+                      <Input
+                        value={noteForm.title}
+                        onChange={(e) => setNoteForm({ ...noteForm, title: e.target.value })}
+                        className="glass-input text-white placeholder:text-gray-400"
+                        placeholder="Enter note title"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-white text-sm font-medium mb-2 block">Content</label>
+                      <Textarea
+                        value={noteForm.content}
+                        onChange={(e) => setNoteForm({ ...noteForm, content: e.target.value })}
+                        className="glass-input text-white placeholder:text-gray-400 min-h-[400px]"
+                        placeholder="Write your thoughts here..."
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Current Summary Display */}
+                  {selectedNote && selectedNote.summary && (
+                    <div className="glass p-4 rounded-lg bg-blue-500/10 border-blue-500/20">
+                      <p className="text-white text-sm font-medium mb-2">Current AI Summary:</p>
+                      <p className="text-gray-300 text-sm">{selectedNote.summary}</p>
+                    </div>
+                  )}
+                  
+                  {/* Action Buttons */}
+                  <div className="flex gap-3 pt-4">
                     <Button
                       onClick={selectedNote ? handleUpdateNote : handleCreateNote}
                       disabled={isLoading || !noteForm.title.trim() || !noteForm.content.trim()}
@@ -497,8 +447,8 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
                       variant="outline"
                       className="glass border-white/20 text-white hover:bg-white/10"
                     >
-                      <X className="w-4 h-4 mr-2" />
-                      Cancel
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                      Back to Chat
                     </Button>
                   </div>
                 </div>

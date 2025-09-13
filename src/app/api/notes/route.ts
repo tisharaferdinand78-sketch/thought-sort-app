@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { generateSummary, generateIcon } from "@/lib/gemini"
+import { generateSummary } from "@/lib/gemini"
 
 export async function GET() {
   try {
@@ -51,24 +51,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log("Generating AI summary and icon...")
-    // Generate AI summary and icon in parallel
-    let summary, icon
-    try {
-      const [summaryResult, iconResult] = await Promise.all([
-        generateSummary(content),
-        generateIcon(content)
-      ])
-      summary = summaryResult
-      icon = iconResult
-      console.log("Summary generated:", summary ? "Success" : "Failed")
-      console.log("Icon generated:", icon)
-    } catch (aiError) {
-      console.error("AI generation error:", aiError)
-      // Fallback to defaults if AI fails
-      summary = "AI summary generation failed"
-      icon = "📄"
-    }
+    console.log("Generating AI summary...")
+    // Generate AI summary
+    const summary = await generateSummary(content)
+    console.log("Summary generated:", summary ? "Success" : "Failed")
 
     console.log("Creating note in database...")
     const note = await prisma.note.create({
@@ -76,7 +62,6 @@ export async function POST(request: NextRequest) {
         title,
         content,
         summary,
-        icon,
         userId: session.user.id
       }
     })
