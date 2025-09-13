@@ -23,7 +23,7 @@ export async function generateIcon(content: string): Promise<string> {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
     
-    const prompt = `Based on the following text content, suggest a single emoji icon that best represents the main topic or theme. Choose from common emojis that would be easily recognizable. Only respond with the emoji, nothing else.
+    const prompt = `Based on the following text content, suggest a single modern emoji icon that best represents the specific content and theme. Choose from modern, outline-style emojis that are clean and minimalist. Focus on the unique aspects of this specific note content. Only respond with the emoji, nothing else.
 
 Text: ${content}`
 
@@ -35,11 +35,11 @@ Text: ${content}`
     if (icon.length <= 4 && icon.length > 0) {
       return icon
     } else {
-      // Fallback to a default icon if AI returns something unexpected
-      return "📝"
+      // Fallback to a default modern icon if AI returns something unexpected
+      return "📄"
     }
   } catch (error) {
     console.error("Error generating icon:", error)
-    return "📝" // Default fallback icon
+    return "📄" // Default fallback icon
   }
 }

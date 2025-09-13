@@ -336,7 +336,7 @@ export function ChatInterface({ onNewNote, selectedNote, onNoteUpdate, onNoteSel
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <div className="flex items-center gap-3 mb-2">
-                          <span className="text-2xl">{selectedNote.icon || "📝"}</span>
+                          <span className="text-2xl">{selectedNote.icon || "📄"}</span>
                           <h3 className="text-white text-xl font-semibold">{selectedNote.title}</h3>
                         </div>
                         <p className="text-gray-400 text-sm">
